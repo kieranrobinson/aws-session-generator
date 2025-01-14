@@ -5,14 +5,29 @@ class Program
 {
     static void Main(string[] args)
     {
-        string awsAccessKey = "accesskey";
-        string awsSecretKey = "secretkey";
-        string mfaSerial = "mfaserial";
-        string region = "eu-west-1";
-        string outputType = "json";
- 
+        string awsAccessKey = "accesskey"; // AWS Access Key
+        string awsSecretKey = "secretkey"; // AWS Secret Key 
+        string mfaSerial = "mfaserial"; // 2FA Device Serial (e.g. arn:aws:iam::123456789012:mfa/UsersDevice)
+        string region = "eu-west-1"; // AWS Region
+        string outputType = "json"; // AWS Output Format
+        string awsDirectory = "C:/Users/USERNAME/.aws/"; // AWS Config Directory. Replace username as needed to point towards the .aws folder
+        
         try
         {
+            Console.WriteLine("Reading AWS Credentials...");
+            string configFilePath = awsDirectory + "config";
+            string credentialsFilePath = awsDirectory + "credentials";
+            Console.WriteLine("Reading Complete. Deleting old credentials...");
+            if (File.Exists(configFilePath))
+            {
+                File.Delete(configFilePath);
+            }
+            if (File.Exists(credentialsFilePath))
+            {
+                File.Delete(credentialsFilePath);
+            }
+            
+            Console.WriteLine("Creating new AWS Credentials...");
             RunPowershellCommand($"aws configure set aws_access_key_id {awsAccessKey}");
             Console.WriteLine("Access Key Set");
             RunPowershellCommand($"aws configure set aws_secret_access_key {awsSecretKey}");
@@ -37,7 +52,6 @@ class Program
                 RunPowershellCommand($"aws sts get-session-token --serial-number {mfaSerial} --token-code {mfaCode}");
             Console.WriteLine("Token retrieved.");
             
-            //TODO: Set temporary session credentials
             var sessionTokenResponseJson = JsonDocument.Parse(sessionTokenResult);
             string tempAccessKey = sessionTokenResponseJson.RootElement.GetProperty("Credentials").GetProperty("AccessKeyId").GetString();
             string tempSecretKey = sessionTokenResponseJson.RootElement.GetProperty("Credentials")
