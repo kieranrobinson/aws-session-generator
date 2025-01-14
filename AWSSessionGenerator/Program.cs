@@ -68,6 +68,8 @@ class Program
         {
             Console.WriteLine($"An Error has occured: {ex.Message}");
         }
+        Console.WriteLine("Press any key to exit...");
+        Console.ReadKey();
     }
 
     private static string RunPowershellCommand(string command)
