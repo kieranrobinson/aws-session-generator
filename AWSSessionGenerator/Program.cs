@@ -1,4 +1,5 @@
 ﻿using System.Management.Automation;
+using System.Text.Json;
 
 class Program
 {
@@ -9,13 +10,17 @@ class Program
         string mfaSerial = "mfaserial";
         string region = "eu-west-1";
         string outputType = "json";
-        
+ 
         try
         {
             RunPowershellCommand($"aws configure set aws_access_key_id {awsAccessKey}");
-            RunPowershellCommand($"aws configure set aws_secret_key {awsSecretKey}");
+            Console.WriteLine("Access Key Set");
+            RunPowershellCommand($"aws configure set aws_secret_access_key {awsSecretKey}");
+            Console.WriteLine("Secret Key Set");
             RunPowershellCommand($"aws configure set region {region}");
+            Console.WriteLine($"Region Set To {region}");
             RunPowershellCommand($"aws configure set output {outputType}");
+            Console.WriteLine($"Output Type Set To {outputType}");
             
             Console.Write("Enter MFA Code: ");
             string? mfaCode = Console.ReadLine();
@@ -31,10 +36,19 @@ class Program
             string sessionTokenResult =
                 RunPowershellCommand($"aws sts get-session-token --serial-number {mfaSerial} --token-code {mfaCode}");
             Console.WriteLine("Token retrieved.");
-            Console.WriteLine("Setting Temporary Session Credentials...");
             
             //TODO: Set temporary session credentials
-            
+            var sessionTokenResponseJson = JsonDocument.Parse(sessionTokenResult);
+            string tempAccessKey = sessionTokenResponseJson.RootElement.GetProperty("Credentials").GetProperty("AccessKeyId").GetString();
+            string tempSecretKey = sessionTokenResponseJson.RootElement.GetProperty("Credentials")
+                .GetProperty("SecretAccessKey").GetString();
+            string tempSessionToken = sessionTokenResponseJson.RootElement.GetProperty("Credentials").GetProperty("SessionToken").GetString();
+
+            Console.WriteLine("Setting Temporary Session Credentials...");
+            RunPowershellCommand($"aws configure set aws_access_key_id {tempAccessKey}");
+            RunPowershellCommand($"aws configure set aws_secret_access_key {tempSecretKey}");
+            RunPowershellCommand($"aws configure set aws_session_token {tempSessionToken}");
+            Console.WriteLine("Temporary Session Credentials Set Successfully");
         }
         catch (Exception ex)
         {
